@@ -15,6 +15,11 @@
 #              We will do purely procedural code.
 
 
+# x(end+1)=newElem is better than x=[x newElem]
+
+
+
+
 function NECRead(filename);
   # open file, and ensure correctness.
   fid = fopen (filename, "rt");
@@ -41,31 +46,31 @@ function NECRead(filename);
   while (! feof(fid))
     textline = fgetl (fid)
 
-    if findstr('- - - STRUCTURE SPECIFICATION - - -', textline)
+    if strfind(textline,'- - - STRUCTURE SPECIFICATION - - -');
       CollectStructureSpecification(fid);
     endif
 
-    if findstr('- - - - SEGMENTATION DATA - - - -', textline)
+    if strfind(textline, '- - - - SEGMENTATION DATA - - - -');
       CollectSegmentationData(fid);
     endif
 
-    if findstr('- - - - - - FREQUENCY - - - - - -', textline)
+    if strfind(textline, '- - - - - - FREQUENCY - - - - - -');
       CollectFrequency(fid);
     endif
 
-    if findstr('- - - STRUCTURE IMPEDANCE LOADING - - -', textline)
+    if strfind(textline, '- - - STRUCTURE IMPEDANCE LOADING - - -');
       CollectStructureImpedanceLoading(fid);
     endif
 
-    if findstr('- - - ANTENNA INPUT PARAMETERS - - -', textline)
+    if strfind(textline, '- - - ANTENNA INPUT PARAMETERS - - -');
       CollectAntennaInputParameters(fid);
     endif
 
-    if findstr('- - - CURRENTS AND LOCATION - - -', textline)
+    if strfind(textline, '- - - CURRENTS AND LOCATION - - -');
       CollectCurrentsAndLocation(fid);
     endif
 
-    if findstr('- - - RADIATION PATTERNS - - -', textline)
+    if strfind(textline, '- - - RADIATION PATTERNS - - -');
       CollectRadiationPatterns(fid);
     endif
   endwhile
@@ -77,14 +82,14 @@ endfunction
 
 function CollectStructureSpecification(fid);
   # skip 8 lines to start of Specification;
-  nlines = fskipl (fid, 8)
+  nlines = fskipl (fid, 8);
 
   # while the line is not blank, read %i%f%f%f%f%f%f%f%i%i%i%i
 endfunction
 
 function CollectSegmentationData(fid);
   # Skip 8 lines...
-  nlines = fskipl ( fid, 8 )
+  nlines = fskipl ( fid, 8 );
 
   # while line is not blank, read %i%f%f%f%f%f%f%f%i%i%i%i
   textline = fgetl (fid);
@@ -103,9 +108,9 @@ function CollectFrequency(fid);
   [scratch, freq, count, errmsg] = sscanf (textline,'%s%e' ,"C")
 
   # Add to data structure.....
-  ud = get(gcf(), 'UserData')
-  ud.Frequency = [ud.Frequency, freq]
-  set(gcf(), 'UserData',ud) 
+  ud = get(gcf(), 'UserData');
+  ud.Frequency(end+1) = freq
+  set(gcf(), 'UserData',ud); 
 
 
 endfunction
@@ -125,7 +130,7 @@ function CollectAntennaInputParameters(fid);
   [iScr,iScr,eScr,eScr,eScr,eScr,impReal,impImag count,errmsg] = sscanf ...
     (textline, '%d%d%e%e%e%e%e%e' ,"C")
   ud = get(gcf(), 'UserData');
-  ud.Impedance = [ud.Impedance, impReal + j.*impImag];
+  ud.Impedance(end+1) = impReal + j.*impImag;
   set (gcf(), 'UserData', ud);
 endfunction
 
