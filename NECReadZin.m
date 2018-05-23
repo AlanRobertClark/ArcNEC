@@ -30,6 +30,7 @@ function impstruct = NECReadZin(filename)
       impstruct.impedance(end+1) = complex (impReal,impImag);
     endif
   endwhile
+  fclose(fid);
   if numel(impstruct.freq) ~= numel(impstruct.impedance)
     error('No. of frequencies not equal to No. of impedances');
   endif
