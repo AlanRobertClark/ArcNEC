@@ -29,10 +29,23 @@ function NECRead(filename);
 
   # Get Database Handle....
   ud = get(gcf(),'UserData')
+  set (gcf(), 'MenuBar', 'None');
   ud.Frequency = [];
   ud.Impedance = [];
   ud.Radpat = [];
   set (gcf(),'UserData',ud)
+
+  menus = { ...
+    '&File', ...
+    '>&Open', ...
+    '>E&xit', ...
+    '&Plot', ...
+    '>Freq&Imp', ...
+    '>Freq&Gain', ...
+    }
+
+  arcmakemenu(gcf(), 'NECRead;', menus);
+
 
   # So now we want to read line-by-line, categorising the data correctly
   # and storing it away.......
@@ -142,6 +155,14 @@ endfunction
 function CollectRadiationPatterns(fid);
   # Skip 4 lines
   nlines = fskipl ( fid, 4 )
+
+  # Must find whether the peak gain is at 90,0 and then whether this is
+  # continued across frequency for a gain vs freq plot?
+
+  # What happens when we have non- 90,0 gains? 
+  # How to collect 90,0 data out of shit-loads of 3d radpat data. (Across
+  # frequency)
+
 
   textline = fgetl (fid);
   [theta,phi,Gv,Gh,Gt] = sscanf (textline, '%e%e%e%e%e', 'C');

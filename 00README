@@ -2,7 +2,26 @@
 # conventional sense of that word.
 
 # we will start with a NEC output reader (Pascal days.....) using Octave
-# only. Gather all outpuy in a UserData structure of the Current Figure.
+# only. Gather all output in a UserData structure of the Current Figure.
 # Use ArcMakeMenu to get the GUI functional on the collected Data.
 
 # AlanRobertClark@gmail.com 20171206
+
+
+
+#apt install libatlas-base-dev
+
+$cd necpp
+$make -f Makefile.git
+$./configure
+
+$vi +413 src/matrix_algebra.cpp
+
+#include <atlas/clapack.h>
+
+make -j 4
+
+produces src/nec2++ which can be copied to ~/bin, or sudo make install
+which I did not want.
+
+Unfortunately it needs -i hi.nec -o hi.out....
