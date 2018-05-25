@@ -57,8 +57,8 @@ function impplot(imp)
       elseif strcmpi(typ, 'alt')
         msgbox('right');
       endif
-      % Each line can be added, no reason for 6 predone etc.
-      % Right button: line colour, solid/dotted/marker, linewidth, legend for 'legends'
+      % Each line can be added, no reason for 6 predone etc.  Right button:
+      % line colour, solid/dotted/marker, linewidth, legend for 'legends'
       % Left Button: marker for 'markers' in markerAx.
 
     case 'help.about'
@@ -87,7 +87,6 @@ function CFh = impplotCreate(imp)
   ud.pos = get(CFh, 'Position');
   ud.Zo = 50; % default.
   ud.dataAx = axes('Visible', 'Off');
-  ud.dataAx2 = axes('Visible', 'Off');
   ud.legendAx = axes('Visible', 'Off');
   ud.markerAx = axes('Visible', 'Off', 'Tag', 'MarkersAxes',...
     'Box', 'On');
@@ -119,30 +118,111 @@ function impplotUpdate(CFh)
 % required.
 % -------------------------------------------------------------------------
 
-  ud =get(CFh, 'UserData');
+  ud = get(CFh, 'UserData');
   chk = findobj(ud.handles.stored.formats, 'Checked', 'On');
   indx = (ud.handles.stored.formats(:) == chk);
 
   % Pseudo Switch
   % case 'Smith_Chart'
   if indx(1)
-%  set(ud.dataAx, 'Visible', 'Off');
+    delete(ud.dataAx);
+    ud.dataAx = axes('Visible', 'Off');
+
     set(ud.dataAx, 'DataAspectRatio', [1 1 1], 'XLim', [-1 1],...
       'YLim', [-1 1]);
     smithgrid(CFh);
-    % dataAx vis off. aspect 111 xlim -1 1 ylim -1 1
     % for i =1:noLines
-    rho = (ud.imp.impedance - ud.Zo)./(ud.imp.impedance + ud.Zo);
-    line (real(rho), imag(rho),'ButtonDownFcn','impplot;','Tag','impline');
-
-    %line stuff, smithgrid stuff.
-  endif
-  if indx(2)
-    %MagPhs
-    % Kill previous axes?????? Or simply get rid of Smith, then plot()
     %
-%    plot 
+    co = get(ud.dataAx, 'ColorOrder');
+    rho = (ud.imp.impedance - ud.Zo)./(ud.imp.impedance + ud.Zo);
+    line (ud.dataAx, real(rho), imag(rho), 'ButtonDownFcn', 'impplot;',...
+      'Tag','impline', 'Color', co(1,:));
 
+    set(CFh, 'UserData', ud);
   endif
-  % etc
+
+  % case 'Magnitude/Phase'
+  if indx(2)
+    delete(ud.dataAx);
+    ud.dataAx = axes('Visible', 'Off');
+
+    magphs = plotyy(ud.imp.freq, abs(ud.imp.impedance),...
+      ud.imp.freq, 180./pi.*angle(ud.imp.impedance));
+    xlabel('Frequency (MHz)');
+    ylabel(magphs(1),'Zin Magnitude (Ohms)');
+    ylabel(magphs(2),'Zin Phase (degrees)');
+    grid on;
+    set(magphs(2), 'ygrid', 'On');
+
+    set(CFh, 'UserData', ud);
+  endif
+  
+  % case 'Real/Imaginary'
+  if indx(3)
+    delete(ud.dataAx);
+    ud.dataAx = axes('Visible', 'Off');
+
+    realimag = plotyy(ud.imp.freq, real(ud.imp.impedance),...
+      ud.imp.freq, imag(ud.imp.impedance));
+    xlabel('Frequency (MHz)');
+    ylabel(realimag(1),'\Re(Zin) (\Omega)'); 
+    ylabel(realimag(2),'\Im(Zin) (\Omega)'); 
+    grid on;
+    set(realimag(2), 'ygrid', 'On');
+    
+    set(CFh, 'UserData', ud);
+  endif
+
+  % case 'VSWR'
+  if indx(4)
+    delete(ud.dataAx);
+    ud.dataAx = axes('Visible', 'Off');
+
+    rho = abs((ud.imp.impedance - ud.Zo)./(ud.imp.impedance + ud.Zo));
+    S = (1 + rho)./(eps+1-rho);
+    plot(ud.imp.freq, S);
+    line(xlim, [2 2], 'Color', 'red');
+
+    % Handle case of wierd axis limits requirements (Ord want ylim [1 5])
+    ylimit = get(ud.dataAx, 'Ylim');
+    ylimit(1) = 1; % VSWR = 1:1 is lowest :-)
+    if min(S) < 5
+      ylimit(2) = 5; % Sane VSWR max
+    endif % Otherwise leave on auto if will not show on plot.
+    set(ud.dataAx, 'Ylim', ylimit);
+
+    xlabel('Frequency (MHz)');
+    ylabel('VSWR');
+    titleStr = sprintf('VSWR referred to Zo=%d\\Omega', ud.Zo);
+    title(titleStr);
+    grid on;
+
+    set(CFh, 'UserData', ud);
+  endif
+
+  % case 'Return_Loss'
+  if indx(5)
+    delete(ud.dataAx);
+    ud.dataAx = axes('Visible', 'Off');
+
+    rho = abs((ud.imp.impedance - ud.Zo)./(ud.imp.impedance + ud.Zo));
+    plot(ud.imp.freq, 20*log10(abs(rho)));
+    % limit axis to -30dB...
+    
+    xlabel('Frequency MHz');
+    ylabel('Return Loss (dB)');
+    grid on;
+
+    set(CFh, 'UserData', ud);
+  endif
+
+
+
+
+
+
+
+
+
+
 endfunction
