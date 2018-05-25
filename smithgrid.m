@@ -28,6 +28,9 @@ function figH = smithgrid(CFh);
   lns = '-';
   col = [0.8 0.8 0.8];
 
+  if strcmpi(graphics_toolkit, 'gnuplot')
+    patch (cos(theta), sin(theta), 'w', 'Tag', 'smith');
+  endif
   % Set up Constant Resistance Circles, Constant Reactance Circles,
   % Constant VSWR circles, and the real axis.
   ConstR([0.2 0.5 1 2 5]);
@@ -37,28 +40,31 @@ function figH = smithgrid(CFh);
   line ([-1 1], [0 0], 'LineStyle', lns, 'Color', col, 'Tag','smidfith');
 
   % Do a bit of fiddling to get the text scale positioned...
-  text(-1.07, -0.05, '0',   'Tag', 'smithgrid');
-  text(-0.7,  -0.05, '0.2', 'Tag', 'smithgrid');
-  text(-0.38, -0.05, '0.5', 'Tag', 'smithgrid');
-  text( 0.03, -0.05, '1',   'Tag', 'smithgrid');
-  text( 0.35, -0.05, '2',   'Tag', 'smithgrid');
-  text( 0.71, -0.05, '5',   'Tag', 'smithgrid');
-  handle = text(1.05, -0.05, '\infty', 'Tag', 'smithgrid');
+  text(-1.05, -0.03, '0',   'Tag', 'smithgrid');
+  text(-0.71, -0.03, '0.2', 'Tag', 'smithgrid');
+  text(-0.37, -0.03, '0.5', 'Tag', 'smithgrid');
+  text( 0.01, -0.03, '1',   'Tag', 'smithgrid');
+  text( 0.34, -0.03, '2',   'Tag', 'smithgrid');
+  text( 0.68, -0.03, '5',   'Tag', 'smithgrid');
+  handle = text(1.01, -0.03, '\infty', 'Tag', 'smithgrid');
   set (handle, 'Fontsize', 15);
 
-  text(-1.05,  0.4,   '0.2', 'Tag', 'smithgrid');
-  text(-1.1,  -0.4,  '-0.2', 'Tag', 'smithgrid');
-  text(-0.7,   0.85,  '0.5', 'Tag', 'smithgrid');
-  text(-0.75, -0.85, '-0.5', 'Tag', 'smithgrid');
-  text( 0,     1.05,  '1',   'Tag', 'smithgrid');
-  text(-0.05, -1.05, '-1',   'Tag', 'smithgrid');
-  text( 0.65,  0.85,  '2',   'Tag', 'smithgrid');
-  text( 0.6,  -0.85, '-2',   'Tag', 'smithgrid');
+  text(-1.02,  0.4,   '0.2', 'Tag', 'smithgrid');
+  text(-1.05, -0.4,  '-0.2', 'Tag', 'smithgrid');
+  text(-0.7,   0.82,  '0.5', 'Tag', 'smithgrid');
+  text(-0.73, -0.81, '-0.5', 'Tag', 'smithgrid');
+  text(-0.02,  1.04,  '1',   'Tag', 'smithgrid');
+  text(-0.03, -1.04, '-1',   'Tag', 'smithgrid');
+  text( 0.60,  0.84,  '2',   'Tag', 'smithgrid');
+  text( 0.6,  -0.83, '-2',   'Tag', 'smithgrid');
 
   % Grey circles with full lines (as opposed to the black dotted lines)
   % overwrite the outer black circle of the patch. Simplest solution is to
-  % draw the patch *last*. 
-  patch (cos(theta), sin(theta), 'w', 'Tag', 'smith');
+  % draw the patch *last*. White fill does not obscure grid in Qt or fltk,
+  % but does in gnuplot. Hence First in gnuplot.....
+  if ~strcmpi(graphics_toolkit, 'gnuplot')
+    patch (cos(theta), sin(theta), 'w', 'Tag', 'smith');
+  endif
 
   % Special case for just a chart :-)
   if nargin < 1
