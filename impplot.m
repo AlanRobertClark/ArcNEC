@@ -21,6 +21,7 @@ function impplot(imp)
 
   CFh = get(0, 'CurrentFigure');
   CBh = get(0, 'CallBackObject');
+  CAh = get(CFh, 'CurrentAxes');
 
   if isempty(CFh)
     if ((nargin==1) && isstruct(imp))
@@ -51,12 +52,31 @@ function impplot(imp)
       impplotUpdate(CFh);
 
     case 'impline'
-      typ = get(CFh, 'SelectionType');
-      if strcmpi(typ, 'normal')
-        msgbox('left');
-      elseif strcmpi(typ, 'alt')
-        msgbox('right');
-      endif
+      switch(get(CFh, 'SelectionType'))
+        case 'normal' % Left-click: add marker at closest data point.
+          xd = get(CBh, 'XData');
+          yd = get(CBh, 'YData');
+          CP = get(CAh, 'CurrentPoint');
+          dist = (xd - CP(1,1)).^2 + (yd - CP(1,2)).^2;
+          ind = find(dist == min(dist));
+          ind = ind(1);
+
+          ud.markers(end+1) = struct('mrkH', [], 'textH', [],...
+            'lineH', CBh, 'index', ind);
+          %indepVal depVal from lineH.XData(ind) surely?
+          %legH ....
+          set(CFh, 'UserData', ud);
+          markers('update', CFh);
+
+
+        case 'alt' % Right-click: change line properties.
+      endswitch
+%      typ = get(CFh, 'SelectionType');
+%      if strcmpi(typ, 'normal')
+%        msgbox('left');
+%      elseif strcmpi(typ, 'alt')
+%        msgbox('right');
+%      endif
       % Each line can be added, no reason for 6 predone etc.  Right button:
       % line colour, solid/dotted/marker, linewidth, legend for 'legends'
       % Left Button: marker for 'markers' in markerAx.
@@ -137,6 +157,8 @@ function impplotUpdate(CFh)
     rho = (ud.imp.impedance - ud.Zo)./(ud.imp.impedance + ud.Zo);
     line (ud.dataAx, real(rho), imag(rho), 'ButtonDownFcn', 'impplot;',...
       'Tag','impline', 'Color', co(1,:));
+    titleStr = sprintf('Zin referred to Zo=%d\\Omega', ud.Zo);
+    title(titleStr);
 
     set(CFh, 'UserData', ud);
   endif
@@ -146,13 +168,16 @@ function impplotUpdate(CFh)
     delete(ud.dataAx);
     ud.dataAx = axes('Visible', 'Off');
 
-    magphs = plotyy(ud.imp.freq, abs(ud.imp.impedance),...
+    [magphsAx, lns(1), lns(2)] = plotyy(ud.imp.freq,...
+      abs(ud.imp.impedance),...
       ud.imp.freq, 180./pi.*angle(ud.imp.impedance));
     xlabel('Frequency (MHz)');
-    ylabel(magphs(1),'Zin Magnitude (Ohms)');
-    ylabel(magphs(2),'Zin Phase (degrees)');
-    grid on;
-    set(magphs(2), 'ygrid', 'On');
+    ylabel(magphsAx(1),'|Zin|(\Omega)');
+    ylabel(magphsAx(2),'\angle Zin(^\circ)');
+    equalgridyy(magphsAx);
+
+    set(lns, 'ButtonDownFcn','impplot;');
+    set(lns, 'Tag', 'impline');
 
     set(CFh, 'UserData', ud);
   endif
@@ -162,14 +187,17 @@ function impplotUpdate(CFh)
     delete(ud.dataAx);
     ud.dataAx = axes('Visible', 'Off');
 
-    realimag = plotyy(ud.imp.freq, real(ud.imp.impedance),...
+    [realimag, lns(1), lns(2)] = plotyy(ud.imp.freq,...
+      real(ud.imp.impedance),...
       ud.imp.freq, imag(ud.imp.impedance));
     xlabel('Frequency (MHz)');
     ylabel(realimag(1),'\Re(Zin) (\Omega)'); 
     ylabel(realimag(2),'\Im(Zin) (\Omega)'); 
-    grid on;
-    set(realimag(2), 'ygrid', 'On');
+    equalgridyy(realimag);
     
+    set(lns, 'ButtonDownFcn','impplot;');
+    set(lns, 'Tag', 'impline');
+
     set(CFh, 'UserData', ud);
   endif
 
@@ -180,7 +208,7 @@ function impplotUpdate(CFh)
 
     rho = abs((ud.imp.impedance - ud.Zo)./(ud.imp.impedance + ud.Zo));
     S = (1 + rho)./(eps+1-rho);
-    plot(ud.imp.freq, S);
+    lns = plot(ud.imp.freq, S);
     line(xlim, [2 2], 'Color', 'red');
 
     % Handle case of wierd axis limits requirements (Ord want ylim [1 5])
@@ -197,6 +225,9 @@ function impplotUpdate(CFh)
     title(titleStr);
     grid on;
 
+    set(lns, 'ButtonDownFcn','impplot;');
+    set(lns, 'Tag', 'impline');
+
     set(CFh, 'UserData', ud);
   endif
 
@@ -206,12 +237,24 @@ function impplotUpdate(CFh)
     ud.dataAx = axes('Visible', 'Off');
 
     rho = abs((ud.imp.impedance - ud.Zo)./(ud.imp.impedance + ud.Zo));
-    plot(ud.imp.freq, 20*log10(abs(rho)));
+    lns = plot(ud.imp.freq, 20*log10(abs(rho)));
+
+    line(xlim, [-9 -9], 'Color', 'red');
     % limit axis to -30dB...
-    
+    ylimit = get(ud.dataAx, 'Ylim');
+    if ylimit(1) < -30
+      ylimit(1) = -30;
+      set(ud.dataAx, 'Ylim', ylimit);
+    endif
+
     xlabel('Frequency MHz');
     ylabel('Return Loss (dB)');
     grid on;
+
+    set(lns, 'ButtonDownFcn','impplot;');
+    set(lns, 'Tag', 'impline');
+    titleStr = sprintf('Return Loss referred to Zo=%d\\Omega', ud.Zo);
+    title(titleStr);
 
     set(CFh, 'UserData', ud);
   endif
@@ -224,5 +267,40 @@ function impplotUpdate(CFh)
 
 
 
+
+endfunction
+
+function equalgridyy(ax)
+% -------------------------------------------------------------------------
+% Makes the y grids align on a dual-y (plotyy) plot. Really looks dumb with
+% different grids, even of different colours, since you really can't see
+% that they *ARE* different colours. Essentially, must ensure and equal
+% number of gaps, and has to shift one set of data up or down by one gap
+% increment.
+% -------------------------------------------------------------------------
+  if ~numel(ax) == 2
+    warning ('equalgridyy must be called with a plotyy vector of axes');
+    return;
+  endif 
+  yt = get(ax, 'ytick');
+  if numel(yt{1}) == numel(yt{2})
+    return;
+  endif
+  adtick = 1;
+  if numel(yt{1}) > numel(yt{2})
+    adtick = 2;
+  endif
+
+  gap = yt{adtick}(end) - yt{adtick}(end-1);
+  yt{adtick}(end+1) = yt{adtick}(end) + gap;
+
+  % can get() them vectorised, but can't *set()* them...
+  % set(ax, 'Ytick', yt);
+  set(ax(1), 'Ytick', yt{1});
+  set(ax(2), 'Ytick', yt{2});
+  yl = {[yt{1}(1), yt{1}(end)]; [yt{2}(1), yt{2}(end)]};
+  set(ax(1), 'YLim', yl{1});
+  set(ax(2), 'YLim', yl{2});
+  grid on;
 
 endfunction
