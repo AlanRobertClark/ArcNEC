@@ -49,11 +49,17 @@ function markers(action, CFh, number)
               sprintf('markers(''motion'', CFh, %g);', mrkNum),...
             'WindowButtonUpFcn',...
               sprintf('markers(''up'', CFh, %g);', mrkNum));
-          % speed up erasemode. No evidence of 'markermotion'
+          % speed up erasemode. No evidence of 'markermotion' Do I really
+          % need to pass CFh???
         case 'alt' % Right-click: delete marker.
-          % delete ud.markers(mrkNum).lineH .textH, .legH
+          % delete ud.markers(mrkNum).mrkH .textH, .legH
           % ud.m(mN)=[]; set ud
           % updatemarkers(CFh)
+          delete([ud.markers(mrkNum).mrkH,...
+            ud.markers(mrkNum).textH]);
+          ud.markers(mrkNum) = [];
+          set(CFh, 'UserData', ud);
+          updatemarkers(CFh);
       endswitch
 
     % marker still clicked on, being dragged The call includes number :-).
@@ -61,6 +67,9 @@ function markers(action, CFh, number)
       mrkNum = number;
       % Shit. CBh is the fucking marker, not the line it is on. Therefore
       % must store the line handle in the actual Marker data...........
+      
+      xdata = get(ud.markers(mrkNum).lineH, 'XData');
+      
       %
       %
       %
@@ -99,24 +108,28 @@ function updatemarkers(CFh)
     xpos = xdata(ud.markers(i).index);
     ypos = ydata(ud.markers(i).index);
     if ishandle(ud.markers(i).mrkH)
-      set(ud.markers(i).mrkH, 'XData', xpos, 'YData', ypos + markerOfs);
+      set(ud.markers(i).mrkH, 'XData', xpos, 'YData', ypos + markerOfs,...
+        'UserData', i);
       % Nothing else changes in a pre-existing marker (or text).
-      set(ud.markers(i).textH, 'Position', [xpos, ypos + textOfs]);
+      set(ud.markers(i).textH, 'Position', [xpos, ypos + textOfs],...
+        'UserData', i, 'String', num2str(i));
     else
       % Create for the first time in the same axes.
       lnCol = get(ud.markers(i).lineH, 'Color');
       ud.markers(i).mrkH = line('Parent', lnAx,...
         'XData', xpos, 'YData', ypos + markerOfs,...
         'Marker', 'v', 'MarkerSize', 10, 'Color', lnCol,...
+        'UserData', i,...
         'Tag', 'marker', 'ButtonDownFcn', 'markers down');
       ud.markers(i).textH = text('Parent', lnAx,...
         'Position', [xpos, ypos + textOfs], 'Color', lnCol,...
         'String', num2str(i), 'HorizontalAlignment', 'Center',...
+        'UserData', i,...
         'Tag', 'marker', 'ButtonDownFcn', 'markers down');
 
         % Note erasemode does no longer exist.
         % % simply the ith marker. No need to store i. But if I click on
-        % text, CBh is not the mrkH.... UserData way to go? 
+        % text, CBh is not the mrkH.... UserData way to go? YEP.
         % Fontsize difference of 1 point irrelevant. ZData irrelevant.
         % Clipping irrelevant.
     endif
