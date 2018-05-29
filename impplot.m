@@ -61,6 +61,8 @@ function impplot(imp)
           ind = find(dist == min(dist));
           ind = ind(1);
 
+          % Create the new marker data record. (CallBack is the *line*)
+          ud = get(CFh, 'UserData');
           ud.markers(end+1) = struct('mrkH', [], 'textH', [],...
             'lineH', CBh, 'index', ind);
           %indepVal depVal from lineH.XData(ind) surely?
